@@ -5,10 +5,9 @@ defmodule DistributedCrypto.Node do
   ### State Definition
 
   defmodule State do
-    @enforce_keys [:value]
-    defstruct value: 0 ,clock_vectors: List.duplicate(0, 10)
-
-    @type t() :: %__MODULE__{value: integer()}
+    @enforce_keys [:value,:vector_clock]
+    defstruct value: 0 , vector_clock: VectorClock.fresh()
+    @type t() :: %__MODULE__{value: integer(), vector_clock: VectorClock.t()}
   end
 
   ### Interface
@@ -58,7 +57,8 @@ defmodule DistributedCrypto.Node do
   @impl true
   def init(_) do
     Logger.info("#{node()} started and joined cluster.")
-    {:ok, %State{value: 0}}
+    {:ok, %State{value: 0, vector_clock: VectorClock.fresh()}}
+
   end
 
   @impl true
@@ -67,31 +67,31 @@ defmodule DistributedCrypto.Node do
   end
 
   @impl true
-  def handle_cast(:increment, %State{value: value} = state) do
+  def handle_cast(:increment, %State{value: value, vector_clock: vc} = state) do
     new_value = value + 1
-    new_state = %State{state | value: new_value}
+    new_state = %State{state | value: new_value, vector_clock: VectorClock.increment(vc, node())}
     broadcast_value_update(new_value)
     {:noreply, new_state}
   end
 
   @impl true
-  def handle_cast(:decrement, %State{value: value} = state) do
+  def handle_cast(:decrement, %State{value: value, vector_clock: vc} = state) do
     new_value = value - 1
-    new_state = %State{state | value: new_value}
+    new_state = %State{state | value: new_value, vector_clock: VectorClock.increment(vc, node())}
     broadcast_value_update(new_value)
     {:noreply, new_state}
   end
 
   @impl true
-  def handle_cast({:propose_value, new_value}, %State{value: _} = state) do
-    new_state = %State{state | value: new_value}
+  def handle_cast({:propose_value, new_value}, %State{value: _, vector_clock: vc} = state) do
+    new_state = %State{state | value: new_value, vector_clock: VectorClock.increment(vc, node())}
     broadcast_value_update(new_value)
     {:noreply, new_state}
   end
 
   @impl true
-  def handle_cast({:update_value, new_value}, %State{value: _} = state) do
-    new_state = %State{state | value: new_value}
+  def handle_cast({:update_value, new_value}, %State{value: _, vector_clock: vc} = state) do
+    new_state = %State{state | value: new_value, vector_clock: VectorClock.increment(vc, node())}
     {:noreply, new_state}
   end
 
