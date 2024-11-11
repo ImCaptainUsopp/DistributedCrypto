@@ -6,7 +6,7 @@ defmodule DistributedCrypto.Node do
 
   defmodule State do
     @enforce_keys [:value]
-    defstruct value: 0
+    defstruct value: 0 ,clock_vectors: List.duplicate(0, 10)
 
     @type t() :: %__MODULE__{value: integer()}
   end
@@ -15,7 +15,7 @@ defmodule DistributedCrypto.Node do
 
   @spec start_link() :: :ignore | {:error, any} | {:ok, pid}
   def start_link() do
-    GenServer.start_link(__MODULE__, %State{value: 0}, name: __MODULE__)
+    GenServer.start_link(__MODULE__, {}, name: __MODULE__)
   end
 
   @spec propose_value(new_value :: integer()) :: :ok
@@ -51,11 +51,7 @@ defmodule DistributedCrypto.Node do
   end
 
   @spec ping(node()) :: :pong | :pang
-  def ping(node) do
-   :pong
-
-
-  end
+  def ping(node), do: :pong
 
   ### Callbacks
 
@@ -68,6 +64,22 @@ defmodule DistributedCrypto.Node do
   @impl true
   def handle_call(:get_value, _from, %State{value: value} = state) do
     {:reply, value, state}
+  end
+
+  @impl true
+  def handle_cast(:increment, %State{value: value} = state) do
+    new_value = value + 1
+    new_state = %State{state | value: new_value}
+    broadcast_value_update(new_value)
+    {:noreply, new_state}
+  end
+
+  @impl true
+  def handle_cast(:decrement, %State{value: value} = state) do
+    new_value = value - 1
+    new_state = %State{state | value: new_value}
+    broadcast_value_update(new_value)
+    {:noreply, new_state}
   end
 
   @impl true

@@ -21,20 +21,32 @@ defmodule DistributedCryptoTest do
     :ok = LocalCluster.start()
     {:ok, cluster} = LocalCluster.start_link(3, prefix: "dsn-", applications: [:distributed_crypto])
     {:ok, [n1, n2, n3] = nodes} = LocalCluster.nodes(cluster)
-    # Vérifier les valeurs initiales
+
+
     assert 0 = Node.get_value(n1)
     assert 0 = Node.get_value(n2)
-    #assert {:ok, 0} = Node.get_value(n3)
+    assert 0 = Node.get_value(n3)
 
-    # Incrémenter la valeur sur le nœud n1
-    #n1.increment()
 
-    # Attendre un moment pour que la synchronisation ait lieu
-    #Process.sleep(100)
+    Node.increment()
 
-    # Vérifier que les deux nœuds reflètent la valeur incrémentée
-    #assert {:ok, 1} = n1.get_value()
-    #assert {:ok, 1} = n2.get_value()
+
+    Process.sleep(100)
+
+
+    assert 1 = Node.get_value(n1)
+    assert 1 = Node.get_value(n2)
+    assert 1 = Node.get_value(n3)
+
+
+     Node.decrement()
+
+
+     Process.sleep(100)
+
+     assert 0 = Node.get_value(n1)
+     assert 0 = Node.get_value(n2)
+     assert 0 = Node.get_value(n3)
     LocalCluster.stop(cluster)
   end
 end
