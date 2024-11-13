@@ -66,11 +66,13 @@ defmodule DistributedCrypto.Node do
     {:reply, value, state}
   end
 
+  # take the max btw the received vector_clock and the node one
+
   @impl true
   def handle_cast(:increment, %State{value: value, vector_clock: vc} = state) do
     new_value = value + 1
     new_state = %State{state | value: new_value, vector_clock: VectorClock.increment(vc, node())}
-    broadcast_value_update(new_value)
+    broadcast_value_update(new_value,vc)
     {:noreply, new_state}
   end
 
@@ -78,27 +80,37 @@ defmodule DistributedCrypto.Node do
   def handle_cast(:decrement, %State{value: value, vector_clock: vc} = state) do
     new_value = value - 1
     new_state = %State{state | value: new_value, vector_clock: VectorClock.increment(vc, node())}
-    broadcast_value_update(new_value)
+    broadcast_value_update(new_value,vc)
     {:noreply, new_state}
   end
 
   @impl true
   def handle_cast({:propose_value, new_value}, %State{value: _, vector_clock: vc} = state) do
     new_state = %State{state | value: new_value, vector_clock: VectorClock.increment(vc, node())}
-    broadcast_value_update(new_value)
+    broadcast_value_update(new_value,vc)
+    {:noreply, new_state}
+  end
+  @impl true
+  def handle_cast({:update_value, new_value, []}, %State{value: _, vector_clock: _} = state) do
+    new_state = %State{state | value: new_value, vector_clock: VectorClock.fresh()}
     {:noreply, new_state}
   end
 
   @impl true
-  def handle_cast({:update_value, new_value}, %State{value: _, vector_clock: vc} = state) do
-    new_state = %State{state | value: new_value, vector_clock: VectorClock.increment(vc, node())}
-    {:noreply, new_state}
+  def handle_cast({:update_value, new_value, incoming_vc}, %State{value: current_value, vector_clock: current_vc} = state) do
+    if VectorClock.dominates(incoming_vc, current_vc) do
+      new_state = %State{state | value: new_value, vector_clock: incoming_vc}
+      {:noreply, new_state}
+    else
+      {:noreply, state}
+    end
   end
+
 
   ### Private Functions
 
-  defp broadcast_value_update(new_value) do
+  defp broadcast_value_update(new_value,vector_clock) do
     members = Node.list()
-    Enum.each(members, fn node -> GenServer.cast({__MODULE__, node}, {:update_value, new_value}) end)
+    Enum.each(members, fn node -> GenServer.cast({__MODULE__, node}, {:update_value, new_value,vector_clock}) end)
   end
 end
