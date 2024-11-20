@@ -6,8 +6,8 @@ defmodule DistributedCrypto.Node do
 
   defmodule State do
     @enforce_keys [:value, :vector_clock, :message_queue]
-    defstruct value: 0, vector_clock: VectorClock.fresh(), message_queue: []
-    @type t() :: %__MODULE__{value: integer(), vector_clock: VectorClock.t(), message_queue: [{VectorClock.t(), integer()}]}
+    defstruct value: 0, vector_clock: DistributedCrypto.VectorClock.new(), message_queue: []
+    @type t() :: %__MODULE__{value: integer(), vector_clock: DistributedCrypto.VectorClock.t(), message_queue: [{DistributedCrypto.VectorClock.t(), integer()}]}
   end
 
   ### Interface
@@ -53,7 +53,7 @@ defmodule DistributedCrypto.Node do
   @impl true
   def init(_) do
     Logger.info("#{node()} started and joined cluster.")
-    {:ok, %State{value: 0, vector_clock: VectorClock.fresh(), message_queue: []}}
+    {:ok, %State{value: 0, vector_clock: DistributedCrypto.VectorClock.new(), message_queue: []}}
   end
 
   @impl true
@@ -64,7 +64,7 @@ defmodule DistributedCrypto.Node do
   @impl true
   def handle_cast(:increment, %State{value: value, vector_clock: vc} = state) do
     new_value = value + 1
-    new_vector_clock = VectorClock.increment(vc, node())
+    new_vector_clock = DistributedCrypto.VectorClock.increment_entry(vc, node())
     new_state = %State{state | value: new_value, vector_clock: new_vector_clock}
     broadcast_value_update(new_value, new_vector_clock)
     {:noreply, new_state}
@@ -73,7 +73,7 @@ defmodule DistributedCrypto.Node do
   @impl true
   def handle_cast(:decrement, %State{value: value, vector_clock: vc} = state) do
     new_value = value - 1
-    new_vector_clock = VectorClock.increment(vc, node())
+    new_vector_clock = DistributedCrypto.VectorClock.increment_entry(vc, node())
     new_state = %State{state | value: new_value, vector_clock: new_vector_clock}
     broadcast_value_update(new_value, new_vector_clock)
     {:noreply, new_state}
@@ -81,7 +81,7 @@ defmodule DistributedCrypto.Node do
 
   @impl true
   def handle_cast({:propose_value, new_value}, %State{value: _, vector_clock: vc} = state) do
-    new_state = %State{state | value: new_value, vector_clock: VectorClock.increment(vc, node())}
+    new_state = %State{state | value: new_value, vector_clock: DistributedCrypto.VectorClock.increment_entry(vc, node())}
     broadcast_value_update(new_value, vc)
     {:noreply, new_state}
   end
@@ -89,7 +89,7 @@ defmodule DistributedCrypto.Node do
   @impl true
   def handle_cast({:update_value, new_value, incoming_vc}, %State{value: current_value, vector_clock: current_vc, message_queue: queue} = state) do
     cond do
-      VectorClock.dominates(incoming_vc, current_vc) ->
+      DistributedCrypto.VectorClock.vmax(incoming_vc, current_vc) ->
         new_state = %State{
           state
           | value: new_value,
@@ -114,7 +114,7 @@ defmodule DistributedCrypto.Node do
   defp process_causal_queue(%State{message_queue: []} = state), do: state
 
   defp process_causal_queue(%State{message_queue: [{vc, new_value} | tail], value: current_value, vector_clock: current_vc} = state) do
-    if VectorClock.dominates(vc, current_vc) do
+    if DistributedCrypto.VectorClock.vmax(vc, current_vc) do
       new_state = %State{
         state
         | value: new_value,
