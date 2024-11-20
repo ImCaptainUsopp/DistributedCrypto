@@ -5,9 +5,9 @@ defmodule DistributedCrypto.Node do
   ### State Definition
 
   defmodule State do
-    @enforce_keys [:value,:vector_clock]
-    defstruct value: 0 , vector_clock: VectorClock.fresh()
-    @type t() :: %__MODULE__{value: integer(), vector_clock: VectorClock.t()}
+    @enforce_keys [:value, :vector_clock, :message_queue]
+    defstruct value: 0, vector_clock: VectorClock.fresh(), message_queue: []
+    @type t() :: %__MODULE__{value: integer(), vector_clock: VectorClock.t(), message_queue: [{VectorClock.t(), integer()}]}
   end
 
   ### Interface
@@ -22,22 +22,18 @@ defmodule DistributedCrypto.Node do
     GenServer.cast(__MODULE__, {:propose_value, new_value})
   end
 
-  @spec propose_value(node(), new_value :: integer()) :: :ok
-  def propose_value(node, new_value) do
-    GenServer.cast({__MODULE__, node}, {:propose_value, new_value})
-  end
+  @spec increment(node()) :: :ok
+  def increment(node), do: GenServer.cast({__MODULE__, node}, :increment)
+
+  @spec decrement(node()) :: :ok
+  def decrement(node), do: GenServer.cast({__MODULE__, node}, :decrement)
+
 
   @spec increment() :: :ok
   def increment(), do: GenServer.cast(__MODULE__, :increment)
 
-  @spec increment(node()) :: :ok
-  def increment(node), do: GenServer.cast({__MODULE__, node}, :increment)
-
   @spec decrement() :: :ok
   def decrement(), do: GenServer.cast(__MODULE__, :decrement)
-
-  @spec decrement(node()) :: :ok
-  def decrement(node), do: GenServer.cast({__MODULE__, node}, :decrement)
 
   @spec get_value() :: integer()
   def get_value() do
@@ -57,8 +53,7 @@ defmodule DistributedCrypto.Node do
   @impl true
   def init(_) do
     Logger.info("#{node()} started and joined cluster.")
-    {:ok, %State{value: 0, vector_clock: VectorClock.fresh()}}
-
+    {:ok, %State{value: 0, vector_clock: VectorClock.fresh(), message_queue: []}}
   end
 
   @impl true
@@ -66,51 +61,69 @@ defmodule DistributedCrypto.Node do
     {:reply, value, state}
   end
 
-  # take the max btw the received vector_clock and the node one
-
   @impl true
   def handle_cast(:increment, %State{value: value, vector_clock: vc} = state) do
     new_value = value + 1
-    new_state = %State{state | value: new_value, vector_clock: VectorClock.increment(vc, node())}
-    broadcast_value_update(new_value,vc)
+    new_vector_clock = VectorClock.increment(vc, node())
+    new_state = %State{state | value: new_value, vector_clock: new_vector_clock}
+    broadcast_value_update(new_value, new_vector_clock)
     {:noreply, new_state}
   end
 
   @impl true
   def handle_cast(:decrement, %State{value: value, vector_clock: vc} = state) do
     new_value = value - 1
-    new_state = %State{state | value: new_value, vector_clock: VectorClock.increment(vc, node())}
-    broadcast_value_update(new_value,vc)
+    new_vector_clock = VectorClock.increment(vc, node())
+    new_state = %State{state | value: new_value, vector_clock: new_vector_clock}
+    broadcast_value_update(new_value, new_vector_clock)
     {:noreply, new_state}
   end
 
   @impl true
   def handle_cast({:propose_value, new_value}, %State{value: _, vector_clock: vc} = state) do
     new_state = %State{state | value: new_value, vector_clock: VectorClock.increment(vc, node())}
-    broadcast_value_update(new_value,vc)
-    {:noreply, new_state}
-  end
-  @impl true
-  def handle_cast({:update_value, new_value, []}, %State{value: _, vector_clock: _} = state) do
-    new_state = %State{state | value: new_value, vector_clock: VectorClock.fresh()}
+    broadcast_value_update(new_value, vc)
     {:noreply, new_state}
   end
 
   @impl true
-  def handle_cast({:update_value, new_value, incoming_vc}, %State{value: current_value, vector_clock: current_vc} = state) do
-    if VectorClock.dominates(incoming_vc, current_vc) do
-      new_state = %State{state | value: new_value, vector_clock: incoming_vc}
-      {:noreply, new_state}
-    else
-      {:noreply, state}
+  def handle_cast({:update_value, new_value, incoming_vc}, %State{value: current_value, vector_clock: current_vc, message_queue: queue} = state) do
+    cond do
+      VectorClock.dominates(incoming_vc, current_vc) ->
+        new_state = %State{
+          state
+          | value: new_value,
+            vector_clock: incoming_vc,
+            message_queue: [{incoming_vc, new_value} | queue]
+        }
+        {:noreply, process_causal_queue(new_state)}
+
+      true ->
+        new_state = %State{state | message_queue: [{incoming_vc, new_value} | queue]}
+        {:noreply, new_state}
     end
   end
 
-
   ### Private Functions
 
-  defp broadcast_value_update(new_value,vector_clock) do
+  defp broadcast_value_update(new_value, vector_clock) do
     members = Node.list()
-    Enum.each(members, fn node -> GenServer.cast({__MODULE__, node}, {:update_value, new_value,vector_clock}) end)
+    Enum.each(members, fn node -> GenServer.cast({__MODULE__, node}, {:update_value, new_value, vector_clock}) end)
+  end
+
+  defp process_causal_queue(%State{message_queue: []} = state), do: state
+
+  defp process_causal_queue(%State{message_queue: [{vc, new_value} | tail], value: current_value, vector_clock: current_vc} = state) do
+    if VectorClock.dominates(vc, current_vc) do
+      new_state = %State{
+        state
+        | value: new_value,
+          vector_clock: vc,
+          message_queue: tail
+      }
+      process_causal_queue(new_state)
+    else
+      state
+    end
   end
 end
