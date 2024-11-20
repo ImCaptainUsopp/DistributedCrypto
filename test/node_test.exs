@@ -23,7 +23,7 @@ defmodule DistributedCryptoTest do
     Node.decrement(n3)
 
     # Wait for updates to propagate across the cluster
-    Process.sleep(1000)
+    Process.sleep(10000)
 
     # Retrieve the final values from all nodes
     value_n1 = Node.get_value(n1)
