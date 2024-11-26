@@ -59,12 +59,12 @@ defmodule DistributedCrypto.Node do
   end
 
   @impl true
-  def handle_call(:get_value, _from, %State{value: value} = state) do
+  def handle_call(:get_value, _from, %State{value: value} = state) do # synchrone
     {:reply, value, state}
   end
 
   @impl true
-  def handle_cast(:increment, %State{value: value, vector_clock: vc} = state) do
+  def handle_cast(:increment, %State{value: value, vector_clock: vc} = state) do # asynchrone
     new_value = value + 1
     new_vector_clock = DistributedCrypto.VectorClock.increment_entry(vc, node())
     new_state = %State{state | value: new_value, vector_clock: new_vector_clock}
@@ -88,10 +88,11 @@ defmodule DistributedCrypto.Node do
     {:noreply, new_state}
   end
 
+  # causale broadcast
   @impl true
   def handle_cast({:update_value, new_value, incoming_vc}, %State{value: current_value, vector_clock: current_vc, message_queue: queue} = state) do
     cond do
-      DistributedCrypto.VectorClock.vmax(incoming_vc, current_vc) ->
+      DistributedCrypto.VectorClock.vmax(incoming_vc, current_vc) -> #
         new_state = %State{
           state
           | value: new_value,
@@ -108,6 +109,7 @@ defmodule DistributedCrypto.Node do
 
   ### Private Functions
 
+  # broadcast fiable
   defp broadcast_value_update(new_value, vector_clock) do
     members = Node.list()
     Enum.each(members, fn node -> GenServer.cast({__MODULE__, node}, {:update_value, new_value, vector_clock}) end)
