@@ -4,13 +4,15 @@ defmodule DistributedCrypto.Node do
 
   ### State Definition
 
+
+  # valeur, vecteur clock, message queue , défault 0, init et [] --> chose de base quand tu crée un noeud
   defmodule State do
     @enforce_keys [:value, :vector_clock, :message_queue]
     defstruct value: 0, vector_clock: DistributedCrypto.VectorClock.new(), message_queue: []
     @type t() :: %__MODULE__{value: integer(), vector_clock: DistributedCrypto.VectorClock.t(), message_queue: [{DistributedCrypto.VectorClock.t(), integer()}]}
   end
 
-  ### Interface
+  ### Interfaces
 
   @spec start_link() :: :ignore | {:error, any} | {:ok, pid}
   def start_link() do
@@ -48,7 +50,7 @@ defmodule DistributedCrypto.Node do
   @spec ping(node()) :: :pong | :pang
   def ping(node), do: :pong
 
-  ### Callbacks
+  ### Callbacks (appelés par l'utilisateur par les fonctions d'interface)
 
   @impl true
   def init(_) do
