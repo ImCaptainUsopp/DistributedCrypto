@@ -1,4 +1,4 @@
----- MODULE DistributedCrypto ----
+---- MODULE CryptCausalBroadcast ----
 CONSTANT Nodes
 CONSTANT Values
 VARIABLE proc \* A function [Nodes -> State]
