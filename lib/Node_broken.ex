@@ -1,4 +1,4 @@
-defmodule DistributedCrypto.Node do
+defmodule DistributedCrypto.BrokenNode do
   use GenServer
   require Logger
 
@@ -91,7 +91,8 @@ defmodule DistributedCrypto.Node do
 
   # causale broadcast
   @impl true
-  def handle_cast({:update_value, new_value, incoming_vc}, %State{value: current_value, vector_clock: current_vc, message_queue: queue} = state) do
+  def handle_cast({:update_value, node, msgSeq, new_value, incoming_vc}, %State{value: current_value, vector_clock: current_vc, message_queue: queue} = state) do
+    reliable_broadcast(new_value, incoming_vc, node, msgSeq,  %State{wasDelivered: delivered} = state)
     cond do
       DistributedCrypto.VectorClock.vmax(incoming_vc, current_vc) -> #
         new_state = %State{
@@ -120,7 +121,7 @@ defmodule DistributedCrypto.Node do
         if member != current_node do
           GenServer.cast(
             {__MODULE__, member},
-            {:update_value, value, vector_clock}
+            {:update_value, node, msgSeq, value, vector_clock}
           )
         end
       end)
