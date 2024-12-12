@@ -36,9 +36,9 @@ RecvBCase(p) ==
 
 (* Initialisation : chaque message commence avec la même valeur et pas de messages *)
 Init ==
-    \E v \in Values,dst \in Nodes,v2 \in Values :
+    \E v \in Values :
         /\ proc = [ p \in Nodes |-> v ]
-        /\ msgs = {[t |-> "C_SEND", v |-> v2, dst |-> dst]}
+        /\ msgs = {}
 
 (*Prochaine etape : on envoie un message particulier ou on broadcast *)
 Next ==
@@ -55,7 +55,7 @@ InSync ==
     \E v \in Values :
         \A n \in Nodes : proc[n] = v
 
-(* Il est garentie que chaque noeud aura la même valeur à un moment *)
+(* Il est garentit que chaque noeud aura la même valeur à un moment *)
 EventuallyInSync ==
     <>[] InSync
 

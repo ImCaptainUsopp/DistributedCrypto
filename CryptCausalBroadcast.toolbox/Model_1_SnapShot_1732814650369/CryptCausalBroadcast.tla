@@ -36,9 +36,9 @@ RecvBCase(p) ==
 
 (* Initialisation : chaque message commence avec la même valeur et pas de messages *)
 Init ==
-    \E v \in Values,dst \in Nodes,v2 \in Values :
+    \E v \in Values,dst \in Nodes :
         /\ proc = [ p \in Nodes |-> v ]
-        /\ msgs = {[t |-> "C_SEND", v |-> v2, dst |-> dst]}
+        /\ msgs = {[t |-> "C_SEND", v |-> v, dst |-> dst]}
 
 (*Prochaine etape : on envoie un message particulier ou on broadcast *)
 Next ==

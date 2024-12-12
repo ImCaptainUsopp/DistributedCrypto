@@ -1,0 +1,81 @@
+@!@!@STARTMSG 2262:0 @!@!@
+TLC2 Version 2.19 of 08 August 2024 (rev: 5a47802)
+@!@!@ENDMSG 2262 @!@!@
+@!@!@STARTMSG 2187:0 @!@!@
+Running breadth-first search Model-Checking with fp 55 and seed 835224443888453766 with 4 workers on 8 cores with 592MB heap and 1331MB offheap memory [pid: 12308] (Windows 10 10.0 amd64, AdoptOpenJDK 14.0.1 x86_64, OffHeapDiskFPSet, DiskStateQueue).
+@!@!@ENDMSG 2187 @!@!@
+@!@!@STARTMSG 2220:0 @!@!@
+Starting SANY...
+@!@!@ENDMSG 2220 @!@!@
+Parsing file C:\Users\vlgau\Desktop\Vilnius\elixir\armand\DistributedSpreadsheet-main\DistributedCrypto\CryptCausalBroadcast.toolbox\Model_1\MC.tla
+Parsing file C:\Users\vlgau\Desktop\Vilnius\elixir\armand\DistributedSpreadsheet-main\DistributedCrypto\CryptCausalBroadcast.toolbox\Model_1\CryptCausalBroadcast.tla
+Parsing file C:\Users\vlgau\Desktop\TLAToolbox-1.7.4-win32.win32.x86_64\toolbox\plugins\org.lamport.tlatools_1.0.0.202408081326\tla2sany\StandardModules\TLC.tla
+Parsing file C:\Users\vlgau\Desktop\TLAToolbox-1.7.4-win32.win32.x86_64\toolbox\plugins\org.lamport.tlatools_1.0.0.202408081326\tla2sany\StandardModules\Naturals.tla
+Parsing file C:\Users\vlgau\Desktop\TLAToolbox-1.7.4-win32.win32.x86_64\toolbox\plugins\org.lamport.tlatools_1.0.0.202408081326\tla2sany\StandardModules\Sequences.tla
+Parsing file C:\Users\vlgau\Desktop\TLAToolbox-1.7.4-win32.win32.x86_64\toolbox\plugins\org.lamport.tlatools_1.0.0.202408081326\tla2sany\StandardModules\FiniteSets.tla
+Semantic processing of module CryptCausalBroadcast
+Semantic processing of module Naturals
+Semantic processing of module Sequences
+Semantic processing of module FiniteSets
+Semantic processing of module TLC
+Semantic processing of module MC
+@!@!@STARTMSG 2219:0 @!@!@
+SANY finished.
+@!@!@ENDMSG 2219 @!@!@
+@!@!@STARTMSG 2185:0 @!@!@
+Starting... (2024-11-28 18:49:46)
+@!@!@ENDMSG 2185 @!@!@
+@!@!@STARTMSG 2189:0 @!@!@
+Computing initial states...
+@!@!@ENDMSG 2189 @!@!@
+@!@!@STARTMSG 1000:1 @!@!@
+TLC encountered a non-enumerable quantifier bound
+0.
+line 39, col 14 to line 39, col 19 of module CryptCausalBroadcast
+@!@!@ENDMSG 1000 @!@!@
+@!@!@STARTMSG 2103:1 @!@!@
+The error occurred when TLC was evaluating the nested
+expressions at the following positions:
+0. Line 39, column 5 to line 41, column 20 in CryptCausalBroadcast
+
+
+@!@!@ENDMSG 2103 @!@!@
+@!@!@STARTMSG 2201:0 @!@!@
+The coverage statistics at 2024-11-28 18:49:47
+@!@!@ENDMSG 2201 @!@!@
+@!@!@STARTMSG 2773:0 @!@!@
+<Init line 38, col 1 to line 38, col 4 of module CryptCausalBroadcast>: 0:0
+@!@!@ENDMSG 2773 @!@!@
+@!@!@STARTMSG 2221:0 @!@!@
+  line 39, col 5 to line 41, col 20 of module CryptCausalBroadcast: 2
+@!@!@ENDMSG 2221 @!@!@
+@!@!@STARTMSG 2772:0 @!@!@
+<RecvCSend line 24, col 1 to line 24, col 12 of module CryptCausalBroadcast>: 0:0
+@!@!@ENDMSG 2772 @!@!@
+@!@!@STARTMSG 2221:0 @!@!@
+  line 27, col 12 to line 27, col 43 of module CryptCausalBroadcast: 0
+@!@!@ENDMSG 2221 @!@!@
+@!@!@STARTMSG 2221:0 @!@!@
+  line 28, col 12 to line 28, col 69 of module CryptCausalBroadcast: 0
+@!@!@ENDMSG 2221 @!@!@
+@!@!@STARTMSG 2772:0 @!@!@
+<RecvBCase line 31, col 1 to line 31, col 12 of module CryptCausalBroadcast>: 0:0
+@!@!@ENDMSG 2772 @!@!@
+@!@!@STARTMSG 2221:0 @!@!@
+  line 34, col 12 to line 34, col 43 of module CryptCausalBroadcast: 0
+@!@!@ENDMSG 2221 @!@!@
+@!@!@STARTMSG 2221:0 @!@!@
+  line 35, col 12 to line 35, col 29 of module CryptCausalBroadcast: 0
+@!@!@ENDMSG 2221 @!@!@
+@!@!@STARTMSG 2202:0 @!@!@
+End of statistics.
+@!@!@ENDMSG 2202 @!@!@
+@!@!@STARTMSG 2200:0 @!@!@
+Progress(1) at 2024-11-28 18:49:47: 0 states generated (0 s/min), 0 distinct states found (0 ds/min), 0 states left on queue.
+@!@!@ENDMSG 2200 @!@!@
+@!@!@STARTMSG 2199:0 @!@!@
+0 states generated, 0 distinct states found, 0 states left on queue.
+@!@!@ENDMSG 2199 @!@!@
+@!@!@STARTMSG 2186:0 @!@!@
+Finished in 1405ms at (2024-11-28 18:49:47)
+@!@!@ENDMSG 2186 @!@!@

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectDescription>
+	<name>CryptCausalBroadcast</name>
+	<comment></comment>
+	<projects>
+	</projects>
+	<buildSpec>
+		<buildCommand>
+			<name>toolbox.builder.TLAParserBuilder</name>
+			<arguments>
+			</arguments>
+		</buildCommand>
+	</buildSpec>
+	<natures>
+		<nature>toolbox.natures.TLANature</nature>
+	</natures>
+	<linkedResources>
+		<link>
+			<name>CryptCausalBroadcast.tla</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/CryptCausalBroadcast.tla</locationURI>
+		</link>
+		<link>
+			<name>Raft.tla</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/Raft.tla</locationURI>
+		</link>
+	</linkedResources>
+</projectDescription>

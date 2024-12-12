@@ -50,6 +50,7 @@ defmodule DistributedCrypto.Node do
 
   ### Callbacks (appelés par l'utilisateur par les fonctions d'interface)
 
+  # message intial
   @impl true
   def init(_) do
     Logger.info("#{node()} started and joined cluster.")
@@ -63,9 +64,9 @@ defmodule DistributedCrypto.Node do
 
   @impl true
   def handle_cast(:increment, %State{value: value, vector_clock: vc, nbMsg: nbmsg} = state) do # asynchrone
-    new_value = value + 1
+    new_value = value + 1 # on incrément la valeur du noeud à l'intérieur
     new_nbMsg = nbmsg + 1
-    new_vector_clock = DistributedCrypto.VectorClock.increment_entry(vc, node())
+    new_vector_clock = DistributedCrypto.VectorClock.increment_entry(vc, node()) # on merge le vecteur interne et reçu
     new_state = %State{state | value: new_value, vector_clock: new_vector_clock}
     reliable_broadcast(new_value, new_vector_clock, node(), new_nbMsg,  %State{wasDelivered: delivered} = state)
     {:noreply, new_state}
@@ -114,8 +115,8 @@ defmodule DistributedCrypto.Node do
   defp reliable_broadcast(value, vector_clock,node, msgSeq, %State{wasDelivered: delivered} = state) do
     current_node = node()
 
-    if not MapSet.member?(delivered, {node, msgSeq}) do
-      Node.list()
+    if not MapSet.member?(delivered, {node, msgSeq}) do # delivré ????
+      Node.list()   # non, on diffuse
       |> Enum.each(fn member ->
         if member != current_node do
           GenServer.cast(
@@ -124,18 +125,19 @@ defmodule DistributedCrypto.Node do
           )
         end
       end)
-      updated_delivered = MapSet.put(delivered, {node, msgSeq})
+      updated_delivered = MapSet.put(delivered, {node, msgSeq}) # on marche comme délivré
       %State{state |  wasDelivered: updated_delivered}
     else
       state
     end
-    new_vc = DistributedCrypto.VectorClock.increment_entry(vector_clock, node())
+    new_vc = DistributedCrypto.VectorClock.increment_entry(vector_clock, node()) # on update l'horloge vectorielle
     %State{state |  vector_clock: new_vc}
   end
 
   defp process_causal_queue(%State{message_queue: []} = state), do: state
 
-  defp process_causal_queue(%State{message_queue: [{vc, new_value} | tail], value: current_value, vector_clock: current_vc} = state) do
+  # vérifie si le message est compatible avec l'horloge actuelle, si il respect il est appliqué et on synchronise l'horloge vectorielle sinon on attend un message pour update
+  defp process_causal_queue(%State{message_queue: [{vc, new_value} | tail], value: current_value, vector_clock: current_vc} = state) do # la queue
     if DistributedCrypto.VectorClock.vmax(vc, current_vc) do
       new_state = %State{
         state
